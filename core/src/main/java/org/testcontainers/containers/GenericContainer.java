@@ -5,7 +5,13 @@ import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.exception.DockerException;
-import com.github.dockerjava.api.model.*;
+import com.github.dockerjava.api.model.Bind;
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.Info;
+import com.github.dockerjava.api.model.Link;
+import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.api.model.Ports;
+import com.github.dockerjava.api.model.Volume;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import lombok.Data;
@@ -31,7 +37,12 @@ import org.testcontainers.containers.traits.LinkableContainer;
 import org.testcontainers.containers.wait.Wait;
 import org.testcontainers.containers.wait.WaitStrategy;
 import org.testcontainers.images.RemoteDockerImage;
-import org.testcontainers.utility.*;
+import org.testcontainers.utility.DockerLoggerFactory;
+import org.testcontainers.utility.DockerMachineClient;
+import org.testcontainers.utility.LogUtils;
+import org.testcontainers.utility.PathUtils;
+import org.testcontainers.utility.ResourceReaper;
+import org.testcontainers.utility.TestEnvironment;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +50,13 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -103,6 +120,9 @@ public class GenericContainer<SELF extends GenericContainer<SELF>>
 
     @Nullable
     private String workingDirectory = null;
+
+    @Nullable
+    private String hostName;
 
     /*
      * Unique instance of DockerClient for use by this container object.
@@ -317,6 +337,11 @@ public class GenericContainer<SELF extends GenericContainer<SELF>>
     }
 
     private void applyConfiguration(CreateContainerCmd createCommand) {
+
+        // Set up host name if specified
+        if (hostName != null) {
+            createCommand.withHostName(hostName);
+        }
 
         // Set up exposed ports (where there are no host port bindings defined)
         ExposedPort[] portArray = exposedPorts.stream()
@@ -660,6 +685,15 @@ public class GenericContainer<SELF extends GenericContainer<SELF>>
     @Override
     public SELF withWorkingDirectory(String workDir) {
         this.setWorkingDirectory(workDir);
+        return self();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public SELF withHostName(String hostName) {
+        this.hostName = hostName;
         return self();
     }
 

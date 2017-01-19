@@ -245,6 +245,13 @@ public interface Container<SELF extends Container<SELF>> extends LinkableContain
     SELF withWorkingDirectory(String workDir);
 
     /**
+     * Set the container's host name
+     *
+     * @param hostName the host name
+     */
+    SELF withHostName(String hostName);
+
+    /**
      * @return is the container currently running?
      */
     Boolean isRunning();
